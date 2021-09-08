@@ -1,0 +1,133 @@
+BASICO COMANDOS KUBECTL (https://kubernetes.io/docs/reference/kubectl/overview/)
+
+ 
+
+VER CURRENT-CONTEXT
+kubectl config current-context
+
+ 
+
+MUDAR CURRENT-CONTEXT
+kubectl config use-context k8s-desenv
+
+ 
+
+LISTAR PODS
+get pods -n bbs-cotacao-seguro-broker
+
+ 
+
+DETALHAR POD (ID do pod, Conteiner, imagens, variaveis...)
+kubectl describe pod -n bbs-cotacao-seguro-broker
+
+ 
+
+DELETAR POD
+kubectl delete pod des-bbs-cotacao-seguro-broker-regular-855944cc5f-6bjsb
+kubectl delete pods --all
+
+ 
+
+COISAS MAIS AVANÇADAS...
+DETALHAR UM PVC (Persistent VolumeClaim) ou um PV (Persistent Volume). Storage (Armazenamento) de um POD. Exemplo, que armazena dashboards do Grafana e outras necessidades..
+kubectl get pvc -n bbs-monitor
+kubectl get pv -n bbs-monitor
+
+ 
+
+LISTAR CONTAINERS EM UM POD
+kubectl get pods POD_NAME_HERE -o jsonpath='{.spec.containers[*].name}' -n NAMESPACE_NAME
+
+ 
+
+ATACHAR SHELL EM UM POD
+
+ 
+
+kubectl exec --stdin --tty CONTEINER_NAME -- /bin/bash -n NAMESPACE_NAME
+
+ 
+
+
+SABER SE TENHO ACESSO PARA EXECUTAR ALGUM COMANDO
+kubectl auth can-i delete pvc --namespace bbs-monitor
+kubectl auth can-i delete secret --namespace als-monitor
+
+ 
+
+************************
+
+ 
+
+KUBECTX (https://github.com/ahmetb/kubectx) Maneira rápida de mudar de cluster. NAO TEM PRA WINDOWS!
+kubectx -h (help)
+kubectx k8s-desenv
+
+ 
+
+************************
+
+ 
+
+LOGS COM KUBECTL
+
+ 
+
+LOGS ISSUE (https://fontes.intranet.bb.com.br/dev/publico/atendimento/-/issues/3130)
+
+ 
+
+CONSULTAR LOG via KUBECTL
+kubectl logs --timestamps -f -n bbs-cotacao-seguro-broker prd-bbs-cotacao-seguro-broker-regular-57f44444d7-npdvv prd-bbs-cotacao-seguro-broker
+
+ 
+
+PARA JOGAR EM ARQUIVO
+kubectl logs --timestamps -f -n bbs-cotacao-seguro-broker prd-bbs-cotacao-seguro-broker-regular-57f44444d7-npdvv prd-bbs-cotacao-seguro-broker >log_de_hoje.log
+Depois da um GEDIT no arquivo.
+
+ 
+
+Outro exemplo: kubectl logs -n <namespace-name> <pod-name> <container-name> --since-time "2021-01-21T21:00:32.292727832Z" 
+
+ 
+
+**************************
+LOGS COM STERN (Melhor)
+
+ 
+
+STERN (https://github.com/wercker/stern)
+INSTALAR -download
+AUTORIZAR - chmod 755 stern_linux_amd64
+COLOCAR NA PASTA - /usr/bin (para tornar um comando)
+
+ 
+
+COMANDO SIMPLES (TODOS OS PODS E CONTAINERS) Usa expressão regular para identificar o pod, nampespace e container.
+stern  'bbs-cotacao.' -n bbs-cotacao-seguro-broker 
+
+ 
+
+COMANDO SIMPLES (TODOS OS PODS DE UM CONTAINER ESPECIFICO)
+stern  'bbs-cotacao.' -c 'prd-bbs.' -n bbs-cotacao-seguro-broker 
+
+ 
+
+COMANDO COM TIMESTAMP
+stern --timestamps 'bbs-cotacao.' -c 'prd-bbs.' -n bbs-cotacao-seguro-broker
+
+ 
+
+COMANDO COM TEMPO ULTIMOS MINUTOS
+stern --timestamps 'bbs-cotacao.' -c 'prd-bbs.' -n bbs-cotacao-seguro-broker --since 5m
+
+ 
+
+COMANDO COM GREP (PALAVRA CHAVE DO REGISTRO DO LOG)
+stern --timestamps 'bbs-cotacao.' -c 'prd-bbs.' -n bbs-cotacao-seguro-broker | grep -i -E 'op5076045v1' | grep -i -E 'RESPONSE JSON Brasilseg: {"'
+
+ 
+
+JOGAR NO ARQUIVO
+stern --timestamps 'bbs-cotacao.' -c 'prd-bbs.' -n bbs-cotacao-seguro-broker | grep -i -E 'op5076045v1' | grep -i -E 'RESPONSE JSON Brasilseg: {"'
