@@ -1,30 +1,37 @@
 import os
 
-from time import sleep
-
 from rich.align import Align
-from rich.columns import Columns
 from rich.console import Console
-from rich.panel import Panel
-from rich.live import Live
-from rich.text import Text
-from rich.spinner import Spinner, SPINNERS
 from rich.layout import Layout
-from rich.markdown import Markdown
+from rich.panel import Panel
+from rich.prompt import Prompt
+from rich.spinner import Spinner
+from rich.table import Table
+from rich.text import Text
 
-from src.kubectl import get_pods, get_pods_params
+from src.kubectl import get_pods, get_pods_params, get_contexts, get_contexts_params, set_context_params, set_context
+
+# from src.globals import _func_waiting_key
+
+import src.globals as globals
 
 layout = Layout()
 
 
 def clear() -> None:
-    os.system('clear') # clears terminal
+    """
+    Limpa o terminal
+    """
+    os.system('clear') 
 
 
 def main_layout(contexto: str, namespace: str, pod: str) -> Layout:
+    """
+    Cria layout inicial
+    """
     console = Console()
 
-    clear()
+    #clear()
 
     layout.split_column(
         Layout( 
@@ -52,27 +59,114 @@ def main_layout(contexto: str, namespace: str, pod: str) -> Layout:
     layout["info"].split_row(
         Layout(
             Panel(f"[cyan]{contexto}", title="Contexto [F1]"),
-            name="left"
+            name="info_context"
         ),
         Layout(
             Panel(f"[cyan]{namespace}", title="Namespace [F2]"),
-            name="middle"
+            name="info_namespace"
         ),
     )
 
     return layout
 
 
-def update_contents(text:str) -> None:
-    layout["contents"].update(
-        Align.center(
-            Text(
-                "texto: %s" % text,
-                justify="center",
-            ),
-            vertical="middle",
+def show_contexts() -> None:
+    global _func_waiting_key 
+
+    layout["info_context"].update(
+        Panel(
+            Spinner("aesthetic", text=Text.assemble(("buscando contextos...", "green")), style="green"),
+            title="Contexto [F1]"
         )
     )
+
+    params = get_contexts_params()
+
+    layout["cmd"].update(
+        Panel(
+            Text.assemble((' '.join(params), "green")),
+            title="CMD"
+        )
+    )
+
+    contexts = get_contexts()
+
+    panel_info = panel_context = None
+    if "erro" in contexts.lower():
+        panel_info = Panel(Text.assemble(("ERRO! ", "red")), title="Contexto [F1]")
+        panel_context = Panel(Text.assemble((contexts, "orange3")))
+    else:
+        panel_info = Panel(Text.assemble(("Selecione um contexto", "orange3")), title="Contexto [F1]")
+
+        table = Table(title="Selecione um contexto")
+        table.add_column("Id", justify="right", style="cyan", no_wrap=True)
+        table.add_column("Contexto", style="green")
+
+        cont = 0
+        options = {}
+        for linha in contexts.split('\n'):
+            if cont is not 0:
+                _ctx = linha[10:22]
+                if len(_ctx.strip()):
+                    table.add_row(str(cont), _ctx)
+                    options[cont] = _ctx
+            cont += 1
+            
+        panel_context = Panel(table)
+        globals._func_waiting_key = "update_context(\"_p_\")"
+        globals._dict = str(options)
+
+
+    layout["info_context"].update(panel_info)
+
+    layout["contents"].update(
+        Align.center(
+            panel_context,
+            vertical="middle"
+        )
+    )
+
+
+def update_context(context) -> None:
+    params = set_context_params(context)
+
+    layout["cmd"].update(
+        Panel(
+            Text.assemble((' '.join(params), "green")),
+            title="CMD"
+        )
+    )
+
+    layout["info_context"].update(
+        Panel(
+            Spinner("aesthetic", text=Text.assemble(("Setando contexto...", "green")), style="green"),
+            title="Contexto [F1]"
+        )
+    )
+
+    result = set_context(context)
+
+
+    info_ctx = ""
+    if "erro" in result.lower():
+        info_ctx = Text.assemble(("ERRO! ", "red"))
+    else:
+        info_ctx = Text.assemble((context, "cyan"))
+
+    layout["contents"].update(
+        Align.center(
+            Text(result),
+            vertical="middle"
+        )
+    )
+
+    layout["info_context"].update(
+        Panel(
+            info_ctx,
+            title="Contexto [F1]"
+        )
+    )
+
 
 
 def update_pods(namespace:str) -> None:
@@ -113,5 +207,14 @@ def update_pods(namespace:str) -> None:
     layout["contents"].update(
         Panel(
             Text.assemble((pods, "orange3"))
+        )
+    )
+
+
+def message(msg) -> None:
+    layout["info_context"].update(
+        Panel(
+            Text(msg),
+            title="Contexto [F1]"
         )
     )

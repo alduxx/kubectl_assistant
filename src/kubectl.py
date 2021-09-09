@@ -32,8 +32,7 @@ def get_first_fav_namespace() -> str:
 
 
 def get_pods_params(namespace: str) -> Tuple[str]:
-        return ('kubectl', 'get', 'pods', '-n', namespace)
-
+        return ('kubectl', 'get', 'pods', '--namespace', namespace)
 
 def get_pods(namespace: str) -> str:
     """
@@ -47,10 +46,44 @@ def get_pods(namespace: str) -> str:
         return "Erro ao executar get_pods:\n%s" % err
 
 
-def get_all_ctx() -> str:
-    os.system('clear')
+def get_contexts_params() -> Tuple[str]:
+    return ('kubectl', 'config', 'get-contexts')
+
+def get_contexts() -> str:
+    """
+    Devolve os contextos disponíveis
+    """
     try:
-        params = ('kubectl', 'config', 'get-contexts')
+        params = get_contexts_params()
+
+        result = subprocess.run(params, stdout=subprocess.PIPE, universal_newlines=True)
+        return result.stdout
+    except Exception as err:
+        return "Erro ao executar get_contexts:\n%s" % err
+
+
+def set_context_params(context) -> Tuple[str]:
+    return ('kubectl', 'config', 'use-context', context)
+
+def set_context(context) -> str:
+    """
+    Seta o contexto selecionado
+    """
+    try:
+        params = set_context_params(context)
+
+        result = subprocess.run(params, stdout=subprocess.PIPE, universal_newlines=True)
+        return result.stdout
+    except Exception as err:
+        return "Erro ao executar set_contexts:\n%s" % err
+
+
+def get_contexts_bkup() -> str:
+    """
+    Devolve os contextos disponíveis
+    """
+    try:
+        params = get_pods_params(namespace)
 
         result = subprocess.run(params, stdout=subprocess.PIPE, universal_newlines=True)
         linhas = result.stdout.split('\n')

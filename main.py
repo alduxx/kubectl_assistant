@@ -1,53 +1,50 @@
+import ast
+import src.globals as globals
+
+from getkey import getkey, keys
 from rich.live import Live
 from time import sleep
 
-from getkey import getkey, keys
-
 from src.kubectl import get_current_context, get_first_fav_namespace
+from src.layout import main_layout, update_pods, show_contexts, update_context, message
 
-from src.layout import main_layout, update_pods
 
 if __name__ == "__main__":
+    globals.initialize()
+
     context =  get_current_context()
     namespace = get_first_fav_namespace() 
     pod = None 
     
     layout = main_layout(context, namespace, pod)
 
-    with Live(layout, refresh_per_second=10, screen=True):
+    with Live(layout, refresh_per_second=10, screen=True, redirect_stdout = False, redirect_stderr = False):
         while True:
             key = getkey()
             if key == keys.F1:
-                print("F1")
-            if key == keys.F2:
+                show_contexts()
+            elif key == keys.F2:
                 print("F2")
-            if key == keys.F3:
-                # update_pods(get_pods(namespace))
+            elif key == keys.F3:
                 update_pods(namespace)
-            if key == keys.ESC:
+            elif key == keys.ESC:
                 break
             else:  
-                pass # Handle text characters
+                if len(globals._func_waiting_key) == 0:
+                    pass
+                else:
+                    try:
+                        _dict_ = ast.literal_eval(globals._dict)
+                        #up_cont("dict: %s" % str(_dict_.values()))
+                        _value = _dict_[int(key)].strip()
+                        eval("%s" % globals._func_waiting_key.replace("_p_", _value))
+                        globals._func_waiting_key = "" # resets waiting function
+                    except Exception as err:
+                        #return "Erro ao executar get_pods:\n%s" % err
+                        #message(err)
+                        pass
+                #break
+                #pass # Handle text characters
 
-            # update_contents(key)
             
             sleep(0.1)
-
-
-"""
-
-        cmd = console.input("Digite uma opção: ")
-
-        if cmd == 'q':
-            break
-        elif cmd == '1':
-            get_all_ctx()
-        elif cmd == '2':
-            ns_select()
-        elif cmd == '3':
-            namespace = input("Digite o nome do namespace: ")
-            print(get_pods(namespace))
-        else:
-            os.system('clear')
-            print("# Opção não encontrada. Tente novamente.")
-            """
