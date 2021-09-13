@@ -78,6 +78,9 @@ def set_context(context) -> str:
         return "Erro ao executar set_contexts:\n%s" % err
 
 
+def describe_pod_params(namespace: str, pod_name:str) -> Tuple[str]:
+    return ('kubectl', 'describe', 'pod', pod_name, '--namespace', namespace)
+
 def get_contexts_bkup() -> str:
     """
     Devolve os contextos disponíveis

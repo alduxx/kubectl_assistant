@@ -9,7 +9,7 @@ from rich.spinner import Spinner
 from rich.table import Table
 from rich.text import Text
 
-from src.kubectl import get_pods, get_pods_params, get_contexts, get_contexts_params, set_context_params, set_context
+from src.kubectl import get_pods, get_pods_params, get_contexts, get_contexts_params, set_context_params, set_context, describe_pod_params
 
 # from src.globals import _func_waiting_key
 
@@ -197,6 +197,34 @@ def update_pods(namespace:str) -> None:
     else:
         text = Text.assemble(("Selecione um pod abaixo para ver mais detalhes", "orange3")),
 
+
+    table = Table(title="Pods do namespace %s" % namespace, show_lines=True)
+
+    cont = 0
+    options = {}
+    for linha in pods.split('\n'):
+        if len(linha.strip()) > 0:
+            if cont == 0:
+                table.add_column("Id", justify="left", style="green", no_wrap=True)
+                table.add_column(linha[:55], justify="left", no_wrap=True, style="orange3")
+                table.add_column(linha[56:62], justify="left", no_wrap=True, style="orange3")
+                table.add_column(linha[64:71], justify="left", no_wrap=True, style="orange3")
+                table.add_column(linha[74:82], justify="left", no_wrap=True, style="orange3")
+                table.add_column(linha[85:88], justify="left", no_wrap=True, style="orange3")
+            else:
+                table.add_row(
+                    str(cont),
+                    linha[:55],
+                    linha[56:62],
+                    linha[64:71],
+                    linha[74:82],
+                    linha[85:88]
+                )
+                options[cont] = linha[:55]
+
+        cont += 1
+
+
     layout["info_pod"].update(
         Panel(
             Text.assemble(text),
@@ -206,9 +234,15 @@ def update_pods(namespace:str) -> None:
 
     layout["contents"].update(
         Panel(
-            Text.assemble((pods, "orange3"))
+            Align.center(
+                table,
+                vertical="middle"
+            )
         )
     )
+
+    globals._func_waiting_key = "select_pod('%s', '_p_')" % namespace
+    globals._dict = str(options)
 
 
 def message(msg) -> None:
@@ -216,5 +250,26 @@ def message(msg) -> None:
         Panel(
             Text(msg),
             title="Contexto [F1]"
+        )
+    )
+
+def select_pod(namespace: str, pod_name: str) -> None:
+    """
+    Atualiza pods e mostra na tela
+    """
+
+    params = describe_pod_params(namespace, pod_name)
+
+    layout["cmd"].update(
+        Panel(
+            Text.assemble((' '.join(params), "green")),
+            title="CMD"
+        )
+    )
+
+    layout["info_pod"].update(
+        Panel(
+            Text.assemble((pod_name, "cyan")),
+            title="Pod [F3]"
         )
     )
