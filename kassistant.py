@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import time
+import sys
 
 from PyInquirer import prompt, Separator
 
@@ -24,13 +25,11 @@ from typing import List
 
 console = Console()
 
-
 def clear() -> None:
     """
     Limpa o terminal
     """
     os.system('clear') 
-
 
 def header(context: str, namespace: str, pod: str, container: str) -> None:
     """
@@ -47,7 +46,6 @@ def header(context: str, namespace: str, pod: str, container: str) -> None:
     ]
 
     console.print(Columns(renderables))
-
 
 
 def get_contexts(answers) -> List[str]:
@@ -71,11 +69,17 @@ def get_favorite_namespaces(answers) -> List[str]:
             lines = file.readlines()
             options = [line.rstrip() for line in lines]
 
-    # options.append("[Inserir namespace manualmente]")
-
-    options.sort()
-
-    return options
+    if len(options):
+        options.sort()
+        return options
+    else:
+        clear()
+        print()
+        console.print( Text.assemble(("\tERRO: Nenhum namespace cadastrado no arquivo ", "dark_red"), ("ns_favs.txt", "red bold"))) 
+        print()
+        console.print( Text.assemble( ("\tVeja: ", "grey50"), ("https://github.com/alduxx/kubectl_assistant#add-namespaces", "grey42 underline"))) 
+        print("\n\n")
+        sys.exit(1)
 
 
 def get_pods_from_namespace(answers, namespace: str) -> List[str]:
@@ -199,7 +203,6 @@ questions = [
 ]
 
 
-
 if __name__ == "__main__":
     current_context = get_current_context()
     current_namespace = None
@@ -213,11 +216,8 @@ if __name__ == "__main__":
 
         if last_cmd_params: # Prints kubeclt command on last line
             print_on_last_line(' '.join(last_cmd_params))
-            # last_cmd_params = None
-
 
         answers = prompt(questions)
-
 
         if answers["menu"] == "switch_context":
             print("")
