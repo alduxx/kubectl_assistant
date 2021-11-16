@@ -43,7 +43,7 @@ def get_pods(namespace: str) -> str:
         result = subprocess.run(params, stdout=subprocess.PIPE, universal_newlines=True)
         return result.stdout
     except Exception as err:
-        return "Erro ao executar get_pods:\n%s" % err
+        return "Erro ao executar get_pods:\nnamespace: %s\n%s" % (namespace, err)
 
 
 def get_contexts_params() -> Tuple[str]:
@@ -78,40 +78,52 @@ def set_context(context) -> str:
         return "Erro ao executar set_contexts:\n%s" % err
 
 
-def describe_pod_params(namespace: str, pod_name:str) -> Tuple[str]:
-    return ('kubectl', 'describe', 'pod', pod_name, '--namespace', namespace)
+def get_pod_containers_params(namespace: str, pod: str) -> Tuple[str]:
+    return ('kubectl', 'get', 'pod', pod, '--namespace', namespace, '-o', 'jsonpath="{.spec.containers[*].name}"')
 
-def get_contexts_bkup() -> str:
+
+def get_pod_containers(namespace: str, pod:str) -> str:
     """
-    Devolve os contextos disponíveis
+    Get containers from pod
     """
     try:
-        params = get_pods_params(namespace)
-
+        params = get_pod_containers_params(namespace, pod)
         result = subprocess.run(params, stdout=subprocess.PIPE, universal_newlines=True)
-        linhas = result.stdout.split('\n')
-        dicio = {}
-        for idx, linha in enumerate(linhas[1:]):
-            l = linha.replace('*', '').strip().split(' ')[0]
-            if len(l):
-                print("%d. %s" % (idx+1, l))
-                dicio[idx+1] = l
+        return result.stdout
+    except Exception as err:
+        return "Erro ao executar get_pod_containers:\nnamespace: %s\npod: %s\n%s" % (namespace, pod, err)
 
-        while True:
-            idx = input("\nSelecione um contexto: ")
 
-            try:
-                sel = dicio[int(idx)]
-                switch_ctx(sel)
-                break
-            except KeyError:
-                print("Tente novamente...")
+def describe_pod_params(namespace: str, pod:str) -> Tuple[str]:
+    return ('kubectl', 'describe', 'pod', pod, '--namespace', namespace)
 
-        
-        os.system('clear')
 
-    except:
-        print("Erro ao executar subprocess.run com os seguintes parâmetros: %s" % params)
+def describe_pod(namespace: str, pod:str) -> str:
+    """
+    Describes pod
+    """
+    try:
+        params = describe_pod_params(namespace, pod)
+        result = subprocess.run(params, stdout=subprocess.PIPE, universal_newlines=True)
+        return result.stdout
+    except Exception as err:
+        return "Erro ao executar describe_pods:\nnamespace: %s\npod: %s\n%s" % (namespace, pod, err)
+
+
+def check_pod_logs_by_container_params(namespace: str, pod:str, container:str) -> Tuple[str]:
+    return('kubectl', 'logs', '--timestamps', '--namespace', namespace, pod, '--container', container)
+
+
+def check_pod_logs_by_container(namespace: str, pod:str, container: str) -> str:
+    """
+    Check logs by container
+    """
+    try:
+        params = check_pod_logs_by_container_params(namespace, pod, container)
+        result = subprocess.run(params, stdout=subprocess.PIPE, universal_newlines=True)
+        return result.stdout
+    except Exception as err:
+        return "Erro ao executar check_pod_logs_by_container:\nnamespace: %s\npod: %s\ncontainer: %s\n%s" % (namespace, pod, container, err)
 
 
 def switch_ctx(ctx) -> str:

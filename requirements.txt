@@ -1,2 +1,2 @@
 rich==10.9.0
-getkey==0.6.5 # https://github.com/kcsaff/getkey
+PyInquirer==1.0.3
