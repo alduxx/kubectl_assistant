@@ -1,4 +1,4 @@
-# kubectl_assistant
+# Kubectl Assistant
 Kubectl assistant tool written in Python
 
 ## Important
